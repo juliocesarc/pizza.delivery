@@ -30,7 +30,7 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { categoryId: string, storeId: string } }
+  { params }: { params: { categoryId: string } }
 ) {
   try {
     const { userId } = auth();
@@ -59,7 +59,7 @@ export async function DELETE(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { categoryId: string, storeId: string } }
+  { params }: { params: { categoryId: string } }
 ) {
   try {   
     const { userId } = auth();
@@ -82,17 +82,6 @@ export async function PATCH(
 
     if (!params.categoryId) {
       return new NextResponse("Category id is required", { status: 400 });
-    }
-
-    const storeByUserId = await prismadb.store.findFirst({
-      where: {
-        id: params.storeId,
-        userId,
-      }
-    });
-
-    if (!storeByUserId) {
-      return new NextResponse("Unauthorized", { status: 405 });
     }
 
     const category = await prismadb.category.update({

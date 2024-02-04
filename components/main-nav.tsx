@@ -46,12 +46,7 @@ export function MainNav({
       href: `/orders`,
       label: 'Pedidos',
       active: pathname === `/orders`,
-    },
-    {
-      href: `/settings`,
-      label: 'Configurações',
-      active: pathname === `/settings`,
-    },
+    }
   ]
 
   return (

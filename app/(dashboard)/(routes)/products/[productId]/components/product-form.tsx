@@ -28,7 +28,6 @@ import ImageUpload from "@/components/ui/image-upload"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { MultipleSelector } from "@/components/ui/multiple-select"
-import { ProductOptions } from "./product-options"
 
 const formSchema = z.object({
   name: z.string().min(1),

@@ -19,9 +19,6 @@ export async function GET(
       },
       include: {
         images: true,
-        category: true,
-        size: true,
-        color: true,
       }
     });
   
@@ -111,9 +108,6 @@ export async function PATCH(
         stock,
         categoryItem: {
           deleteMany: {},
-          createMany: {
-            data: categories.map(categorie => ({ categoryId: categorie.value }))
-          }
         },
         images: {
           deleteMany: {},  

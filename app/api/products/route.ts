@@ -55,11 +55,6 @@ export async function POST(req: Request) {
             ],
           },
         },
-        categoryItem: {
-          createMany: {
-            data: categories.map(categorie => ({ categoryId: categorie.value }))
-          }
-        }
       },
     });
   

@@ -4,29 +4,33 @@ import prismadb from "@/lib/prismadb";
 import { formatter } from "@/lib/utils";
 
 import { ProductsClient } from "./components/client";
-import { ProductColumn } from "./components/columns";
 
 const ProductsPage = async () => {
   const products = await prismadb.product.findMany({
     include: {
-      category: true,
-      size: true,
-      color: true,
+      categoryItem: {
+        include: {
+          category: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
-    }
+    },
   });
 
-  const formattedProducts: ProductColumn[] = products.map((item) => ({
+  // TODO: Tipar o formattedProducts
+  const formattedProducts = products.map((item) => ({
     id: item.id,
     name: item.name,
     isFeatured: item.isFeatured,
     isArchived: item.isArchived,
     price: formatter.format(item.price.toNumber()),
-    category: item.category.name,
-    size: item.size.name,
-    color: item.color.value,
+    category: item.categoryItem.map(i => i.category.name),
     createdAt: format(item.createdAt, 'MMMM do, yyyy'),
   }));
 

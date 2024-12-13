@@ -3,8 +3,9 @@ import { format } from "date-fns";
 import prismadb from "@/lib/prismadb";
 import { formatter } from "@/lib/utils";
 
-import { OrderColumn } from "./components/columns"
+// import { OrderColumn } from "./components/orders"
 import { OrderClient } from "./components/client";
+import { mails } from "./components/data";
 
 
 const OrdersPage = async () => {
@@ -21,22 +22,22 @@ const OrdersPage = async () => {
     }
   });
 
-  const formattedOrders: OrderColumn[] = orders.map((item) => ({
-    id: item.id,
-    phone: item.phone,
-    address: item.address,
-    products: item.orderItems.map((orderItem) => orderItem.product.name).join(', '),
-    totalPrice: formatter.format(item.orderItems.reduce((total, item) => {
-      return total + Number(item.product.price)
-    }, 0)),
-    isPaid: item.isPaid,
-    createdAt: format(item.createdAt, 'MMMM do, yyyy'),
-  }));
+  // const formattedOrders: OrderColumn[] = orders.map((item) => ({
+  //   id: item.id,
+  //   phone: item.phone,
+  //   address: item.address,
+  //   products: item.orderItems.map((orderItem) => orderItem.product.name).join(', '),
+  //   totalPrice: formatter.format(item.orderItems.reduce((total, item) => {
+  //     return total + Number(item.product.price)
+  //   }, 0)),
+  //   isPaid: item.isPaid,
+  //   createdAt: format(item.createdAt, 'MMMM do, yyyy'),
+  // }));
 
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <OrderClient data={formattedOrders} />
+        <OrderClient items={mails}/>
       </div>
     </div>
   );

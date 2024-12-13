@@ -1,62 +1,30 @@
-"use client"
-
-import { ColumnDef } from "@tanstack/react-table"
-
-import { CellAction } from "./cell-action"
+import { ColumnDef } from "@tanstack/react-table";
 
 export type ProductColumn = {
-  id: string
+  id: string;
   name: string;
-  price: string;
-  category: string;
-  size: string;
-  color: string;
-  createdAt: string;
-  isFeatured: boolean;
   isArchived: boolean;
-}
+  isFeatured: boolean;
+  createdAt: string;
+};
 
 export const columns: ColumnDef<ProductColumn>[] = [
   {
-    accessorKey: "name",
+    id: "name",
     header: "Nome",
+    accessorKey: "name", // Acessa o campo `name`
   },
   {
-    accessorKey: "isArchived",
+    id: "isArchived",
     header: "Arquivar",
   },
   {
-    accessorKey: "isFeatured",
+    id: "isFeatured",
     header: "Apresentar",
   },
   {
-    accessorKey: "price",
-    header: "Preço",
-  },
-  {
-    accessorKey: "category",
-    header: "Categoria",
-  },
-  {
-    accessorKey: "size",
-    header: "Tamanho",
-  },
-  {
-    accessorKey: "color",
-    header: "Cor",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-x-2">
-        {row.original.color}
-        <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: row.original.color }} />
-      </div>
-    )
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Data",
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => <CellAction data={row.original} />
+    id: "createdAt",
+    header: "Criado em",
+    accessorKey: "createdAt", // Acessa o campo `createdAt`
   },
 ];

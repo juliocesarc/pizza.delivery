@@ -13,23 +13,22 @@ const ProductPage = async ({
     },
     include: {
       images: true,
+      categoryItem: {
+        include: {
+          category: true
+        }
+      }
     }
   });
 
   const categories = await prismadb.category.findMany();
 
-  const sizes = await prismadb.size.findMany();
-
-  const colors = await prismadb.color.findMany();
-
   return ( 
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
         <ProductForm 
-          categories={categories} 
-          colors={colors}
-          sizes={sizes}
           initialData={product}
+          categories={categories} 
         />
       </div>
     </div>

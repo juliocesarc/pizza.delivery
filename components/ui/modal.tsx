@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { 
     Dialog, 
@@ -9,37 +9,29 @@ import {
 } from "@/components/ui/dialog";
 
 interface ModalProps {
+    isOpen: boolean;
     title: string;
     description: string;
-    isOpen: boolean;
+    children?: React.ReactNode;
     onClose: () => void;
-    children?: React.ReactNode
 }
 
 export const Modal: React.FC<ModalProps> = ({
+    isOpen,
     title,
     description,
-    isOpen,
+    children,
     onClose,
-    children
 }) => {
-    const onChange = (open: boolean) => {
-        if (!open) {
-            onClose()
-        }
-    }
-
     return (
-        <Dialog open={isOpen} onOpenChange={onChange}>
-            <DialogContent>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-3xl w-full">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>
-                        {description}
-                    </DialogDescription>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-                <div>{children  }</div>
+                <div>{children}</div>
             </DialogContent>
         </Dialog>
-    )
-}
+    );
+};

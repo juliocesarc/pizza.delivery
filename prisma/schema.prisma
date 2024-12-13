@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url = env("DATABASE_URL")
   relationMode = "prisma"
 }
@@ -20,39 +20,98 @@ model Billboard {
   updatedAt   DateTime @updatedAt
 }
 
+// alterar o id para uma string
 model Category {
   id          String      @id @default(uuid())
-  billboardId String      // Foreign Key to Billboard
-  billboard   Billboard   @relation(fields: [billboardId], references: [id])
   name        String
-  products    Product[]   @relation("CategoryToProduct")
+  categoryItems CategoryItem[] // Relation to OrderItem model
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  billboardId String?      // Foreign Key to Billboard
+  billboard   Billboard?   @relation(fields: [billboardId], references: [id])
 
   @@index([billboardId])
 }
 
+// alterar o id
+model CategoryItem {
+  categoryId   String  // Foreign Key to Order
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productId String  // Foreign Key to Product
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, productId])
+}
+
 model Product {
   id          String    @id @default(uuid())
-  categoryId  String    // Foreign Key to Category
-  category    Category  @relation("CategoryToProduct", fields: [categoryId], references: [id])
   name        String
+  description String
   price       Decimal
+  stock   Int
+
   isFeatured  Boolean   @default(false)
   isArchived  Boolean   @default(false)
-  sizeId      String    // Foreign Key to Size
-  size        Size      @relation(fields: [sizeId], references: [id])
-  colorId     String    // Foreign Key to Color
-  color       Color     @relation(fields: [colorId], references: [id])
-  images      Image[]   // Relation to Image model
-  orderItems  OrderItem[]   // Relation to Order model
+
+  variant Variant[]
+  optionType OptionType[]
+  images      Image[]   
+  categoryItem CategoryItem[]
+  orderItems  OrderItem[]   
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  @@index([categoryId])
-  @@index([sizeId])
-  @@index([colorId])
 }
+
+model OptionType {
+  id          String      @id @default(uuid())
+  name        String
+  productId   String      
+  product     Product     @relation(fields: [productId], references: [id])
+
+  optionValue OptionValue[]
+
+  @@index([productId])
+}
+
+model OptionValue {
+  id            String           @id @default(uuid())
+  name          String
+  optionTypeId      String
+  optionType        OptionType    @relation(fields: [optionTypeId], references: [id])
+
+  optionValueVariant OptionValueVariant[]
+
+  @@index([optionTypeId])
+}
+
+model OptionValueVariant {
+  variantId  String
+  variant    Variant    @relation(fields: [variantId], references: [id])
+  optionValueId String
+  optionValue   OptionValue   @relation(fields: [optionValueId], references: [id])
+
+  @@index([variantId])
+  @@index([optionValueId])
+  @@id([variantId, optionValueId])
+}
+
+model Variant {
+  id        String    @id @default(uuid())
+  name String
+  price       Decimal
+  stock   Int
+
+  productId  String
+  product    Product    @relation(fields: [productId], references: [id])
+  
+  optionValueVariant OptionValueVariant[]
+
+  @@index([productId])
+}
+
 
 model Order {
   id        String    @id @default(uuid())
@@ -64,7 +123,6 @@ model Order {
   updatedAt DateTime  @updatedAt
 }
 
-// Intermediary for a many-to-many relationship
 model OrderItem {
   id        String  @id @default(uuid())
   orderId   String  // Foreign Key to Order
@@ -74,24 +132,6 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
-}
-
-model Size {
-  id          String    @id @default(uuid())
-  name        String
-  value       String
-  products    Product[] // Relation to Product model
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-model Color {
-  id          String   @id @default(uuid())
-  name        String
-  value       String
-  products    Product[] // Relation to Product model
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }
 
 model Image {

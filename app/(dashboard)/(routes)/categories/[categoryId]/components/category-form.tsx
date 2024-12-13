@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const formSchema = z.object({
   name: z.string().min(2),
-  billboardId: z.string().min(1),
+  billboardId: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof formSchema>
@@ -54,10 +54,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
-      name: '',
-      billboardId: '',
-    }
+    defaultValues: initialData
+    ? {
+        name: initialData.name,
+        billboardId: initialData.billboardId ?? undefined, 
+      }
+    : {
+        name: "",
+        billboardId: undefined,
+      },
   });
 
   const onSubmit = async (data: CategoryFormValues) => {

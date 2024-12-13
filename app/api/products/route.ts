@@ -9,45 +9,45 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { name, price, categoryId, colorId, sizeId, images, isFeatured, isArchived } = body;
+    const { 
+      name,
+      description,
+      images, 
+      price, 
+      stock,
+      categories,  
+      isFeatured, 
+      isArchived 
+    } = body;
 
     if (!userId) {
-      return new NextResponse("Unauthenticated", { status: 403 });
+      return new NextResponse("Não autenticado", { status: 403 });
     }
 
     if (!name) {
-      return new NextResponse("Name is required", { status: 400 });
+      return new NextResponse("Nome é necessário", { status: 400 });
     }
 
     if (!images || !images.length) {
-      return new NextResponse("Images are required", { status: 400 });
+      return new NextResponse("Imagem é necessário", { status: 400 });
     }
 
     if (!price) {
-      return new NextResponse("Price is required", { status: 400 });
+      return new NextResponse("Preço é necessário", { status: 400 });
     }
 
-    if (!categoryId) {
+    if (!categories) {
       return new NextResponse("Category id is required", { status: 400 });
-    }
-
-    if (!colorId) {
-      return new NextResponse("Color id is required", { status: 400 });
-    }
-
-    if (!sizeId) {
-      return new NextResponse("Size id is required", { status: 400 });
     }
 
     const product = await prismadb.product.create({
       data: {
         name,
+        description,
         price,
+        stock,
         isFeatured,
         isArchived,
-        categoryId,
-        colorId,
-        sizeId,
         images: {
           createMany: {
             data: [
@@ -55,6 +55,11 @@ export async function POST(req: Request) {
             ],
           },
         },
+        categoryItem: {
+          createMany: {
+            data: categories.map(categorie => ({ categoryId: categorie.value }))
+          }
+        }
       },
     });
   
@@ -69,29 +74,37 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId') || undefined;
-    const colorId = searchParams.get('colorId') || undefined;
-    const sizeId = searchParams.get('sizeId') || undefined;
     const isFeatured = searchParams.get('isFeatured');
 
     const products = await prismadb.product.findMany({
       where: {
-        categoryId,
-        colorId,
-        sizeId,
+        categoryItem: {
+          some: {
+            categoryId
+          }
+        },
         isFeatured: isFeatured ? true : undefined,
         isArchived: false,
       },
       include: {
         images: true,
-        category: true,
-        color: true,
-        size: true,
+        categoryItem: {
+          include: {
+            category: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc',
       }
     });
   
+    console.log(products)
+
     return NextResponse.json(products);
   } catch (error) {
     console.log('[PRODUCTS_GET]', error);

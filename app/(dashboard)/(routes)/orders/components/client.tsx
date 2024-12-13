@@ -1,23 +1,35 @@
 "use client";
 
-import { DataTable } from "@/components/ui/data-table";
 import { Heading } from "@/components/ui/heading";
-import { Separator } from "@/components/ui/separator";
 
-import { columns, OrderColumn } from "./columns";
+import { Orders } from "./orders";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { OrdersForm } from "./ordersForm";
+import { useModalStore } from "@/hooks/use-order-modal";
 
 interface OrderClientProps {
-  data: OrderColumn[];
+  items: any[]
 }
 
 export const OrderClient: React.FC<OrderClientProps> = ({
-  data
+ items
 }) => {
+  const { openModal, isModalOpen } = useModalStore()
+  console.log(isModalOpen)
+
   return (
     <>
-      <Heading title={`Pedidos (${data.length})`} description="Gerencie pedidos de sua loja" />
-      <Separator />
-      <DataTable searchKey="products" columns={columns} data={data} />
+      <button onClick={openModal}>Abrir Detalhes do Pedido</button>
+      <Heading title={`Pedidos`} />
+      {/* <div className="flex justify-between"> */}
+        {/* <div> */}
+          <OrdersForm />
+        {/* </div> */}
+        {/* <ResizableHandle withHandle /> */}
+        {/* <div>
+          <Orders items={items} />
+        </div> */}
+      {/* </div>  */}
     </>
   );
 };

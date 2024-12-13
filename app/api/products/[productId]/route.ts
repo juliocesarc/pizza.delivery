@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs";
 
 import prismadb from "@/lib/prismadb";
 
+// TODO: Alterar essa rota GET
 export async function GET(
   req: Request,
   { params }: { params: { productId: string } }
@@ -49,7 +50,7 @@ export async function DELETE(
     const product = await prismadb.product.delete({
       where: {
         id: params.productId
-      },
+      }
     });
   
     return NextResponse.json(product);
@@ -58,7 +59,6 @@ export async function DELETE(
     return new NextResponse("Internal error", { status: 500 });
   }
 };
-
 
 export async function PATCH(
   req: Request,
@@ -69,7 +69,16 @@ export async function PATCH(
 
     const body = await req.json();
 
-    const { name, price, categoryId, images, colorId, sizeId, isFeatured, isArchived } = body;
+    const { 
+      name,
+      description,
+      images, 
+      price, 
+      stock,
+      categories,  
+      isFeatured, 
+      isArchived 
+    } = body;
 
     if (!userId) {
       return new NextResponse("Unauthenticated", { status: 403 });
@@ -91,50 +100,33 @@ export async function PATCH(
       return new NextResponse("Price is required", { status: 400 });
     }
 
-    if (!categoryId) {
-      return new NextResponse("Category id is required", { status: 400 });
-    }
-
-    if (!colorId) {
-      return new NextResponse("Color id is required", { status: 400 });
-    }
-
-    if (!sizeId) {
-      return new NextResponse("Size id is required", { status: 400 });
-    }
-
-    await prismadb.product.update({
-      where: {
-        id: params.productId
-      },
-      data: {
-        name,
-        price,
-        categoryId,
-        colorId,
-        sizeId,
-        images: {
-          deleteMany: {},
-        },
-        isFeatured,
-        isArchived,
-      },
-    });
-
     const product = await prismadb.product.update({
       where: {
         id: params.productId
       },
       data: {
+        name,
+        description,
+        price,
+        stock,
+        categoryItem: {
+          deleteMany: {},
+          createMany: {
+            data: categories.map(categorie => ({ categoryId: categorie.value }))
+          }
+        },
         images: {
+          deleteMany: {},  
           createMany: {
             data: [
               ...images.map((image: { url: string }) => image),
             ],
           },
         },
+        isFeatured,
+        isArchived,
       },
-    })
+    });
   
     return NextResponse.json(product);
   } catch (error) {

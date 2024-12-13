@@ -18,6 +18,11 @@ export function MainNav({
       active: pathname === `/`,
     },
     {
+      href: `/orders`,
+      label: 'Pedidos',
+      active: pathname === `/orders`,
+    },
+    {
       href: `/billboards`,
       label: 'Banners',
       active: pathname === `/billboards`,
@@ -28,24 +33,9 @@ export function MainNav({
       active: pathname === `/categories`,
     },
     {
-      href: `/sizes`,
-      label: 'Tamanhos',
-      active: pathname === `/sizes`,
-    },
-    {
-      href: `/colors`,
-      label: 'Cores',
-      active: pathname === `/colors`,
-    },
-    {
       href: `/products`,
       label: 'Produtos',
       active: pathname === `/products`,
-    },
-    {
-      href: `/orders`,
-      label: 'Pedidos',
-      active: pathname === `/orders`,
     }
   ]
 

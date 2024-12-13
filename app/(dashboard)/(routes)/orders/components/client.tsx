@@ -1,9 +1,6 @@
 "use client";
 
 import { Heading } from "@/components/ui/heading";
-
-import { Orders } from "./orders";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { OrdersForm } from "./ordersForm";
 import { useModalStore } from "@/hooks/use-order-modal";
 

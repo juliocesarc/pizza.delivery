@@ -9,18 +9,18 @@ import { mails } from "./components/data";
 
 
 const OrdersPage = async () => {
-  const orders = await prismadb.order.findMany({
-    include: {
-      orderItems: {
-        include: {
-          product: true
-        }
-      }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
+  // const orders = await prismadb.order.findMany({
+  //   include: {
+  //     orderItems: {
+  //       include: {
+  //         product: true
+  //       }
+  //     }
+  //   },
+  //   orderBy: {
+  //     createdAt: 'desc'
+  //   }
+  // });
 
   // const formattedOrders: OrderColumn[] = orders.map((item) => ({
   //   id: item.id,

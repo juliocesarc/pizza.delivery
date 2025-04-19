@@ -12,12 +12,7 @@ const ProductPage = async ({
       id: params.productId,
     },
     include: {
-      images: true,
-      categoryItem: {
-        include: {
-          category: true
-        }
-      }
+      category: true
     }
   });
 

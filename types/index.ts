@@ -1,23 +1,28 @@
+import { Flavor } from "@prisma/client";
+
 export interface Order {
     customer: Customer;
-    pizza: Pizza[];
-    products: {
-        name: String;
-        observations: String;
-    }
+    products: ProductsWithFlavors[] | []
 }
 
-interface Customer {
+export interface Customer {
     name: String;
     celPhoneNumber?: String;
     address?: String;
 }
 
-interface Pizza {
-    size: String;
-    edge: String;
-    flavors: {
-        name: String;
-    }[]
-    observations: String;
-}
+export interface ProductsWithFlavors {
+    id: string;
+    name: string;
+    maxFlavors: number;
+    flavors: Flavor[];
+};
+
+// interface Pizza {
+//     size: String;
+//     edge: String;
+//     flavors: {
+//         name: String;
+//     }[]
+//     observations: String;
+// }

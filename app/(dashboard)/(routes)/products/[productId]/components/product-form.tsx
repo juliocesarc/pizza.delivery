@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "react-hot-toast"
 import { Trash } from "lucide-react"
-import { Category, CategoryItem, Image, Product } from "@prisma/client"
+import { Category, Product } from "@prisma/client"
 import { useParams, useRouter } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
@@ -32,7 +32,7 @@ import { MultipleSelector } from "@/components/ui/multiple-select"
 const formSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(15),
-  images: z.object({ url: z.string() }).array(),
+  // image: z.string(),
   price: z.coerce.number().min(1),
   stock: z.coerce.number().min(1),
   categories: z.array(z.object({
@@ -48,10 +48,7 @@ type ProductFormValues = z.infer<typeof formSchema>
 
 interface ProductFormProps {
   initialData: (Product & {
-    images: Image[];
-    categoryItem: (CategoryItem & {
-      category: Category;
-    })[];
+    category: Category[];
   }) | null;
   categories: Category[];
 }
@@ -78,17 +75,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const defaultValues = initialData ? {
     ...initialData,
+    stock: initialData?.stock || 1,
+    // image: initialData?.images[0]?.url,
     price: parseFloat(String(initialData?.price)),
-    categories: initialData?.categoryItem.map(categorie => ({ 
-      label: categorie.category.name,
-      value: categorie.category.id
+    categories: initialData?.category.map(categorie => ({ 
+      label: categorie.name,
+      value: categorie.id
     }))
   } : {
     name: '',
     description: '',
     price: 0,
     stock: 1,
-    images: [],
+    // image: '',
     categories: [],
     isFeatured: false,
     isArchived: false,
@@ -158,24 +157,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full">
           <div className="md:grid md:grid-cols-3 gap-8">
             {/* Images */}
-            <FormField
+            {/* <FormField
               control={form.control}
-              name="images"
+              name="image"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Imagens</FormLabel>
                   <FormControl>
                     <ImageUpload 
-                      value={field.value.map((image) => image.url)} 
+                      value={field.value} 
                       disabled={loading} 
-                      onChange={(url) => field.onChange([...field.value, { url }])}
-                      onRemove={(url) => field.onChange([...field.value.filter((current) => current.url !== url)])}
+                      onChange={(url) => field.onChange(url)}
+                      onRemove={(url) => field.onChange("")}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             {/* Categoria */}
             <FormField

@@ -8,13 +8,9 @@ import { ProductsClient } from "./components/client";
 const ProductsPage = async () => {
   const products = await prismadb.product.findMany({
     include: {
-      categoryItem: {
-        include: {
-          category: {
-            select: {
-              name: true
-            }
-          }
+      category: {
+        select: {
+          name: true
         }
       }
     },
@@ -30,7 +26,7 @@ const ProductsPage = async () => {
     isFeatured: item.isFeatured,
     isArchived: item.isArchived,
     price: formatter.format(item.price.toNumber()),
-    category: item.categoryItem.map(i => i.category.name),
+    category: item.category.name,
     createdAt: format(item.createdAt, 'MMMM do, yyyy'),
   }));
 

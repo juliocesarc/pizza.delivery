@@ -13,8 +13,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { useModalStore } from "@/hooks/use-order-modal";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { getProductData } from "@/app/(dashboard)/(routes)/orders/__actions/actions";
 import { Product } from "@prisma/client";
+import { useDebounce } from "../ui/multiple-select";
+import { OrderClient } from "@/app/(dashboard)/(routes)/orders/components/client";
+import { OrdersClient } from "./orders/orders-client";
 
 const formSchema = z.object({
   name: z.string().min(1),
@@ -29,10 +31,6 @@ const options = [
 
 export const OrdersModal = () => {
   const { isModalOpen, closeModal } = useModalStore();
-
-  const [loading, setLoading] = useState(false);
-  const [activeValue, setActiveValue] = useState<string>("");
-  const [productData, setProductData] = useState<Product[]>([])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,19 +51,6 @@ export const OrdersModal = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getProductData();
-        setProductData(data);
-      } catch (error) {
-        console.error("Failed to fetch product data:", error);
-      }
-    };
-  
-    fetchData();
-  }, [activeValue]);
-
   return (
     <Modal
       isOpen={isModalOpen}
@@ -81,7 +66,8 @@ export const OrdersModal = () => {
                 className="flex flex-col gap-4"
               >
                 <FormLabel>Cliente</FormLabel>
-                <div className="flex gap-3">
+                <OrdersClient/>
+                {/* <div className="flex gap-3">
                   <FormField
                     control={form.control}
                     name="celphone"
@@ -93,43 +79,7 @@ export const OrdersModal = () => {
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input disabled={loading} placeholder="Nome" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Tabs value={activeValue} onValueChange={setActiveValue}>
-                    <TabsList>
-                      {options.map((option) => (
-                        <TabsTrigger key={option.value} value={option.value}>
-                          {option.label}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
-                </div>
-                <FormLabel>Pedido</FormLabel>
-                <div className="flex gap-3">
-                  {/* <FormField
-                    control={form.control}
-                    name="celphone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input disabled={loading} placeholder="Telefone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
+                  /> *
                   <Tabs value={activeValue} onValueChange={setActiveValue}>
                     <TabsList>
                       {options.map((option) => (
@@ -167,7 +117,7 @@ export const OrdersModal = () => {
                     </Button>
                     <Button disabled={loading} type="submit">Continue</Button>
                   </div>
-                </div>
+                </div> */}
               </form>
             </Form>
           </div>

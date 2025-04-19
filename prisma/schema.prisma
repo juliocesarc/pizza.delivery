@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,135 +8,91 @@ datasource db {
 }
 
 model Billboard {
-  id          String @id @default(uuid())
-  label       String
-  imageUrl    String
-  categories  Category[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String     @id @default(uuid())
+  label      String
+  imageUrl   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  categories Category[]
 }
 
-// alterar o id para uma string
 model Category {
-  id          String      @id @default(uuid())
+  id          String     @id @default(uuid())
   name        String
-  categoryItems CategoryItem[] // Relation to OrderItem model
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  billboardId String?      // Foreign Key to Billboard
-  billboard   Billboard?   @relation(fields: [billboardId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  billboardId String?
+  billboard   Billboard? @relation(fields: [billboardId], references: [id])
+  flavors     Flavor[]
+  products    Product[]
 
   @@index([billboardId])
 }
 
-// alterar o id
-model CategoryItem {
-  categoryId   String  // Foreign Key to Order
-  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  productId String  // Foreign Key to Product
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+model Flavor {
+  id                 String              @id @default(uuid())
+  name               String
+  categoryId         String
+  category           Category            @relation(fields: [categoryId], references: [id])
+  flavorToOrderItems FlavorToOrderItem[]
+}
 
-  @@id([categoryId, productId])
+model FlavorToOrderItem {
+  id          String    @id @default(uuid())
+  flavorId    String
+  orderItemId String
+  flavor      Flavor    @relation(fields: [flavorId], references: [id])
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
 }
 
 model Product {
-  id          String    @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String
   price       Decimal
-  stock   Int
-
-  isFeatured  Boolean   @default(false)
-  isArchived  Boolean   @default(false)
-
-  variant Variant[]
-  optionType OptionType[]
-  images      Image[]   
-  categoryItem CategoryItem[]
-  orderItems  OrderItem[]   
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  stock       Int?
+  isFeatured  Boolean     @default(false)
+  isArchived  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  categoryId  String
+  maxFlavors  Int         @default(1)
+  minFlavors  Int         @default(1)
+  orderItems  OrderItem[]
+  category    Category    @relation(fields: [categoryId], references: [id])
 }
-
-model OptionType {
-  id          String      @id @default(uuid())
-  name        String
-  productId   String      
-  product     Product     @relation(fields: [productId], references: [id])
-
-  optionValue OptionValue[]
-
-  @@index([productId])
-}
-
-model OptionValue {
-  id            String           @id @default(uuid())
-  name          String
-  optionTypeId      String
-  optionType        OptionType    @relation(fields: [optionTypeId], references: [id])
-
-  optionValueVariant OptionValueVariant[]
-
-  @@index([optionTypeId])
-}
-
-model OptionValueVariant {
-  variantId  String
-  variant    Variant    @relation(fields: [variantId], references: [id])
-  optionValueId String
-  optionValue   OptionValue   @relation(fields: [optionValueId], references: [id])
-
-  @@index([variantId])
-  @@index([optionValueId])
-  @@id([variantId, optionValueId])
-}
-
-model Variant {
-  id        String    @id @default(uuid())
-  name String
-  price       Decimal
-  stock   Int
-
-  productId  String
-  product    Product    @relation(fields: [productId], references: [id])
-  
-  optionValueVariant OptionValueVariant[]
-
-  @@index([productId])
-}
-
 
 model Order {
-  id        String    @id @default(uuid())
-  orderItems OrderItem[] // Relation to OrderItem model
-  isPaid     Boolean   @default(false)
-  phone      String    @default("")
-  address    String    @default("")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String      @id @default(uuid())
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isPaid    Boolean     @default(false)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String  // Foreign Key to Order
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String  // Foreign Key to Product
-  product   Product @relation(fields: [productId], references: [id])
-
-  @@index([orderId])
-  @@index([productId])
+  id                 String              @id @default(uuid())
+  orderId            String
+  productId          String
+  createdAt          DateTime            @default(now())
+  price              Decimal
+  quantity           Int
+  size               String
+  updatedAt          DateTime            @updatedAt
+  flavorToOrderItems FlavorToOrderItem[]
+  order              Order               @relation(fields: [orderId], references: [id])
+  product            Product             @relation(fields: [productId], references: [id])
 }
 
-model Image {
-  id          String   @id @default(uuid())
-  productId   String   // Foreign Key to Product
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url         String   // URL of the image
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([productId])
+model User {
+  id        String   @id @default(uuid())
+  celphone  String   @unique
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
 }

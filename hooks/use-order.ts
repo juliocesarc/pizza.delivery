@@ -1,15 +1,34 @@
-import { Order } from "@/types";
+import { Customer, Order, ProductsWithFlavors } from "@/types";
 import { create } from "zustand";
 
+
 type OrderStore = {
-    orders: Order[];
-    add: (order: Order) => void;
+    order: Order;
+    setCustomer: (customer: Customer) => void;
+    addProduct: (product: ProductsWithFlavors) => void;
 }
 
 export const useOrderStore = create<OrderStore>()((set) => ({
-    orders: [],
-    add: (order: Order) => 
+    order: {
+        customer: {
+            name: '',
+            celPhoneNumber: '',
+            address: '',
+        },
+        products: []
+    },
+    setCustomer: (customer) => 
         set((state) => ({
-            orders: [...state.orders, order],
+            order: {
+                ...state.order,
+                customer
+            }
+        })),
+    addProduct: (product) =>
+        set((state) => ({
+            order: {
+                ...state.order,
+                products: [...state.order.products, product]
+            }
         }))
 }))

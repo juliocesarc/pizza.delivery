@@ -28,9 +28,9 @@ export async function POST(req: Request) {
       return new NextResponse("Nome é necessário", { status: 400 });
     }
 
-    if (!images || !images.length) {
-      return new NextResponse("Imagem é necessário", { status: 400 });
-    }
+    // if (!images || !images.length) {
+    //   return new NextResponse("Imagem é necessário", { status: 400 });
+    // }
 
     if (!price) {
       return new NextResponse("Preço é necessário", { status: 400 });
@@ -44,17 +44,8 @@ export async function POST(req: Request) {
       data: {
         name,
         description,
+        categoryId: categories[0].value,
         price,
-        stock,
-        isFeatured,
-        isArchived,
-        images: {
-          createMany: {
-            data: [
-              ...images.map((image: { url: string }) => image),
-            ],
-          },
-        },
       },
     });
   
@@ -73,23 +64,14 @@ export async function GET(req: Request) {
 
     const products = await prismadb.product.findMany({
       where: {
-        categoryItem: {
-          some: {
-            categoryId
-          }
-        },
+        categoryId,
         isFeatured: isFeatured ? true : undefined,
         isArchived: false,
       },
       include: {
-        images: true,
-        categoryItem: {
-          include: {
-            category: {
-              select: {
-                name: true
-              }
-            }
+        category: {
+          select: {
+            name: true
           }
         }
       },

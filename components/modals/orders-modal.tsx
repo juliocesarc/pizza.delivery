@@ -15,7 +15,7 @@ import { useModalStore } from "@/hooks/use-order-modal";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { Product } from "@prisma/client";
 import { useDebounce } from "../ui/multiple-select";
-import { OrderClient } from "@/app/(dashboard)/(routes)/orders/components/client";
+import { OrderClient } from "@/app/(dashboard)/(routes)/[establishmentId]/orders/components/client";
 import { OrdersClient } from "./orders/orders-client";
 
 const formSchema = z.object({

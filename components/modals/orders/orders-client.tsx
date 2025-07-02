@@ -1,9 +1,8 @@
-import { getCategories, getFlavors, searchUserByPhone } from "@/app/(dashboard)/(routes)/orders/__actions/actions";
+import { getCategories, getFlavors, searchCustomerByPhone } from "@/app/(dashboard)/(routes)/[establishmentId]/orders/__actions/actions";
 import { FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/components/ui/multiple-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Flavor, Product } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { OrdersEdit } from "./order-edit";
 
@@ -30,7 +29,7 @@ export const OrdersClient = () => {
     const [localActiveValue, setLocalActiveValue] = useState<string>("balcao");
     const [categorieActiveValue, setCategorieActiveValue] = useState<string>("");
     const [categoriesWithProducts, setCategoriesWithProducts] = useState<categories>([]);
-    const [flavors, setFlavors] = useState<Flavor[]>([])
+    /* const [flavors, setFlavors] = useState<Flavor[]>([]) */
     const [searchInput, setSearchInput] = useState<string>('');
     const debouncedPhone = useDebounce(phoneInput, 400);
   
@@ -65,7 +64,7 @@ export const OrdersClient = () => {
       const fetchSuggestions = async () => {
         if (debouncedPhone.length >= 4 && debouncedPhone.length < 11) {
           try {
-            const result = await searchUserByPhone(debouncedPhone);
+            const result = await searchCustomerByPhone(debouncedPhone, "");
             setSuggestedPhones(result || []);
           } catch (error) {
             console.error('Erro ao buscar sugestões:', error);
@@ -76,7 +75,7 @@ export const OrdersClient = () => {
       fetchSuggestions();
     }, [debouncedPhone]);
   
-    useEffect(() => {
+/*     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const result = await getCategories()
@@ -86,9 +85,9 @@ export const OrdersClient = () => {
             }
         }
         fetchCategories();
-    }, []);
+    }, []); */
 
-    useEffect(() => {
+/*     useEffect(() => {
         const fetchFlavors = async () => {
             try {
                 const flavors = await getFlavors(categorieActiveValue);
@@ -98,7 +97,7 @@ export const OrdersClient = () => {
             }
         }
         fetchFlavors();
-    }, [categorieActiveValue])
+    }, [categorieActiveValue]) */
 
 
     return (
@@ -176,7 +175,7 @@ export const OrdersClient = () => {
                     )}
                 </div>
             </div>
-            <OrdersEdit products={selectedCategory?.products} flavors={flavors} />
+           {/*  <OrdersEdit products={selectedCategory?.products} flavors={flavors} /> */}
         </>
     );
   };

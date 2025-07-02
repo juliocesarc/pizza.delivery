@@ -4,9 +4,8 @@ import { OrdersEdit } from "@/components/modals/orders/order-edit";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/components/ui/multiple-select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flavor } from "@prisma/client";
 import { useEffect, useState } from "react";
-import { getCategories, getFlavors, searchUserByPhone } from "../__actions/actions";
+import { getCategories, getFlavors, searchCustomerByPhone } from "../__actions/actions";
 import { useOrderStore } from "@/hooks/use-order";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { ChevronRight, Edit2, Printer, Trash2 } from "lucide-react";
 import { Heading } from "@/components/ui/heading";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Separator } from "@/components/ui/separator";
+import { useParams } from "next/navigation";
 
 const options = [
     { value: "entrega", label: "Entrega" },
@@ -27,18 +27,23 @@ type categories = {
     products: {
         id: string;
         name: string;
-        maxFlavors: number;
+        minOptions: number,
+        maxOptions: number;
     }[]
 }[]
 
 const NewOrderPage = () => {
+  const params = useParams()
+
+  const establishmentId = params.establishmentId as string
+
     const [phoneInput, setPhoneInput] = useState<string>('');
     const [nameInput, setNameInput] = useState<string>(''); // Estado para o nome
     const [suggestedPhones, setSuggestedPhones] = useState<{ celphone: string; name: string }[]>([]);
     const [localActiveValue, setLocalActiveValue] = useState<string>("balcao");
     const [categorieActiveValue, setCategorieActiveValue] = useState<string>("");
     const [categoriesWithProducts, setCategoriesWithProducts] = useState<categories>([]);
-    const [flavors, setFlavors] = useState<Flavor[]>([])
+    const [flavors, setFlavors] = useState<any[]>([])
     const [searchInput, setSearchInput] = useState<string>('');
     const debouncedPhone = useDebounce(phoneInput, 400);
 
@@ -75,7 +80,7 @@ const NewOrderPage = () => {
       const fetchSuggestions = async () => {
         if (debouncedPhone.length >= 4 && debouncedPhone.length < 11) {
           try {
-            const result = await searchUserByPhone(debouncedPhone);
+            const result = await searchCustomerByPhone(debouncedPhone, establishmentId);
             setSuggestedPhones(result || []);
           } catch (error) {
             console.error('Erro ao buscar sugestões:', error);
@@ -89,8 +94,9 @@ const NewOrderPage = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const result = await getCategories()
+                const result = await getCategories(establishmentId)
                 setCategoriesWithProducts(result || []);
+                console.log("result", result)
             } catch (error) {
                 console.error('Erro ao buscar sugestões:', error);
             }

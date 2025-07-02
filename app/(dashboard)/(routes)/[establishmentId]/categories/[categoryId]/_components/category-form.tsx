@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "react-hot-toast"
 import { Trash } from "lucide-react"
-import { Billboard, Category } from "@prisma/client"
+import { Banner, Category } from "@prisma/client"
 import { useParams, useRouter } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator"
 import { Heading } from "@/components/ui/heading"
 import { AlertModal } from "@/components/modals/alert-modal"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { UpsertCategorie } from "../../_actions/categorie"
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -34,7 +35,7 @@ type CategoryFormValues = z.infer<typeof formSchema>
 
 interface CategoryFormProps {
   initialData: Category | null;
-  billboards: Billboard[];
+  billboards: Banner[];
 };
 
 export const CategoryForm: React.FC<CategoryFormProps> = ({
@@ -57,7 +58,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
     defaultValues: initialData
     ? {
         name: initialData.name,
-        billboardId: initialData.billboardId ?? undefined, 
+        billboardId: initialData.bannerId ?? undefined, 
       }
     : {
         name: "",
@@ -68,11 +69,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   const onSubmit = async (data: CategoryFormValues) => {
     try {
       setLoading(true);
-      if (initialData) {
-        await axios.patch(`/api/categories/${params.categoryId}`, data);
-      } else {
-        await axios.post(`/api/categories`, data);
-      }
+      const categoryId = params.categoryId as string
+      await UpsertCategorie({data, categoryId})
       router.refresh();
       router.push(`/categories`);
       toast.success(toastMessage);

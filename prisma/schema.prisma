@@ -7,92 +7,269 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Billboard {
-  id         String     @id @default(uuid())
-  label      String
-  imageUrl   String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  categories Category[]
-}
-
-model Category {
-  id          String     @id @default(uuid())
-  name        String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  billboardId String?
-  billboard   Billboard? @relation(fields: [billboardId], references: [id])
-  flavors     Flavor[]
-  products    Product[]
-
-  @@index([billboardId])
-}
-
-model Flavor {
-  id                 String              @id @default(uuid())
-  name               String
-  categoryId         String
-  category           Category            @relation(fields: [categoryId], references: [id])
-  flavorToOrderItems FlavorToOrderItem[]
-}
-
-model FlavorToOrderItem {
-  id          String    @id @default(uuid())
-  flavorId    String
-  orderItemId String
-  flavor      Flavor    @relation(fields: [flavorId], references: [id])
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
-}
-
-model Product {
-  id          String      @id @default(uuid())
-  name        String
-  description String
-  price       Decimal
-  stock       Int?
-  isFeatured  Boolean     @default(false)
-  isArchived  Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  categoryId  String
-  maxFlavors  Int         @default(1)
-  minFlavors  Int         @default(1)
-  orderItems  OrderItem[]
-  category    Category    @relation(fields: [categoryId], references: [id])
-}
-
-model Order {
-  id        String      @id @default(uuid())
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  isPaid    Boolean     @default(false)
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  items     OrderItem[]
-}
-
-model OrderItem {
-  id                 String              @id @default(uuid())
-  orderId            String
-  productId          String
-  createdAt          DateTime            @default(now())
-  price              Decimal
-  quantity           Int
-  size               String
-  updatedAt          DateTime            @updatedAt
-  flavorToOrderItems FlavorToOrderItem[]
-  order              Order               @relation(fields: [orderId], references: [id])
-  product            Product             @relation(fields: [productId], references: [id])
+enum Role {
+  PLATFORM_ADMIN
+  STORE_OWNER
+  STAFF
+  DELIVERY
 }
 
 model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  cpf           String   @unique
+  celphone      String   @unique
+  dateOfBirth   DateTime
+  password_hash String
+  role          Role
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  establishments UserOnEstablishments[]
+}
+
+model Customer {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  cpf           String    @unique
+  celphone      String    @unique
+  dateOfBirth   DateTime?
+  password_hash String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders    Order[]
+  addresses Address[]
+}
+
+model UserOnEstablishments {
+  userId          String
+  establishmentId String
+  role            Role // Papel dentro do restaurante (STORE_OWNER, STAFF, DELIVERY)
+
+  user          User          @relation(fields: [userId], references: [id])
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+
+  @@id([userId, establishmentId]) // Chave composta
+}
+
+model PaymentMethod {
   id        String   @id @default(uuid())
-  celphone  String   @unique
-  email     String   @unique
-  password  String
-  name      String
+  name      String   @unique // Ex: "PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro"
+  code      String   @unique // Ex: "pix", "credit_card", "debit_card", "cash"
+  icon      String? // URL do ícone do meio de pagamento
+  isActive  Boolean  @default(true) // Se o meio está ativo na plataforma
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]
+
+  establishments Establishment[]
+  payments       Payment[]
+}
+
+// Representa estabelecimentos diferentes que usam o sistema (ex: várias pizzarias ou lanchonetes)
+model Establishment {
+  id             String                 @id @default(uuid()) 
+  name           String
+  phone          String?
+  address        String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  banners        Banner[]
+  categories     Category[]
+  products       Product[]
+  orders         Order[]
+  users          UserOnEstablishments[]
+  paymentMethods PaymentMethod[]
+}
+
+// Representa banners promocionais (ex: "Promoção de Pizza", "Bebida Grátis na Terça")
+model Banner {
+  id              String        @id @default(uuid())
+  label           String
+  imageUrl        String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  establishmentId String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  categories      Category[]
+}
+
+// Categoria de produtos, ex: "Pizzas", "Bebidas"
+model Category {
+  id              String        @id @default(uuid())
+  name            String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  bannerId        String?
+  banner          Banner?       @relation(fields: [bannerId], references: [id])
+  optionGroups    OptionGroup[] // Grupos de opções disponíveis para esta categoria
+  products        Product[]
+  establishmentId String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+
+  @@index([bannerId])
+}
+
+enum PricingModel {
+  ADDITIVE // Soma todos os preços (padrão)
+  HIGHEST_PRICE // Cobra apenas o mais caro (pizzarias)
+  FIXED_UPGRADE // Taxa fixa independente da quantidade
+}
+
+// Grupo de opções, ex: "Sabores da Pizza", "Espessura da Massa", "Borda Recheada"
+model OptionGroup {
+  id                  String               @id @default(uuid())
+  name                String
+  categoryId          String
+  pricingModel        PricingModel?        @default(ADDITIVE)
+  category            Category             @relation(fields: [categoryId], references: [id])
+  options             Option[]
+  productOptionGroups ProductOptionGroup[] // Relação N:N com produtos e suas configurações
+
+  @@index([categoryId])
+  @@map("option_groups")
+}
+
+// Opções individuais, ex: "Calabresa", "Margherita", "Massa Fina", "Borda Catupiry"
+model Option {
+  id               String            @id @default(uuid())
+  name             String
+  basePrice        Int               @default(0) // Preço base da opção
+  optionGroupId    String
+  optionGroup      OptionGroup       @relation(fields: [optionGroupId], references: [id])
+  productOptions   ProductOption[] // Preços específicos por produto
+  orderItemOptions OrderItemOption[]
+}
+
+// Produtos vendidos, ex: "Pizza Broto", "Pizza Média", "Pizza Grande"
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  image       String?
+  price       Int      @default(0)
+  stock       Int?
+  isFeatured  Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId          String
+  category            Category             @relation(fields: [categoryId], references: [id])
+  establishmentId     String
+  establishment       Establishment        @relation(fields: [establishmentId], references: [id])
+  orderItems          OrderItem[]
+  productOptionGroups ProductOptionGroup[] // Configurações específicas dos grupos de opções
+  productOptions      ProductOption[] // Preços específicos das opções para este produto
+}
+
+// Configurações específicas de cada grupo de opções para cada produto
+model ProductOptionGroup {
+  id            String @id @default(uuid())
+  productId     String
+  optionGroupId String
+  minSelect     Int    @default(0)
+  maxSelect     Int    @default(1)
+
+  // Novos campos para controle de precificação específico por produto
+  pricingModel PricingModel? // Sobrescreve o padrão do OptionGroup se definido
+  upgradePrice Int? // Para modelo FIXED_UPGRADE
+
+  isRequired  Boolean     @default(true)
+  product     Product     @relation(fields: [productId], references: [id])
+  optionGroup OptionGroup @relation(fields: [optionGroupId], references: [id])
+
+  @@unique([productId, optionGroupId])
+}
+
+// Preços específicos das opções para cada produto
+model ProductOption {
+  id        String  @id @default(uuid())
+  productId String
+  optionId  String
+  price     Int // Preço da opção para este produto específico
+  product   Product @relation(fields: [productId], references: [id])
+  option    Option  @relation(fields: [optionId], references: [id])
+
+  @@unique([productId, optionId])
+}
+
+// Pedido principal
+model Order {
+  id           String      @id @default(uuid())
+  isPaid       Boolean     @default(false)
+  items        OrderItem[]
+  payment      Payment? // Relacionamento 1:1 opcional
+  status       String // Ex: 'pendente', 'preparando', 'entregue'
+  observations String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  customerId        String
+  customer          Customer      @relation(fields: [customerId], references: [id])
+  deliveryAddressId String? // Endereço de entrega, se aplicável
+  deliveryAddress   Address?      @relation(fields: [deliveryAddressId], references: [id])
+  establishmentId   String
+  establishment     Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+}
+
+// Itens do pedido, ex: "1x Pizza Média" com sabores específicos
+model OrderItem {
+  id           String  @id @default(uuid())
+  price        Int
+  quantity     Int
+  observations String?
+
+  options OrderItemOption[]
+  orderId      String
+  productId    String
+  order   Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product           @relation(fields: [productId], references: [id])
+}
+
+// Ligações entre OrderItem e suas opções (sabores, complementos, etc)
+model OrderItemOption {
+  id          String    @id @default(uuid())
+  orderItemId String
+  optionId    String
+  price       Decimal // Preço da opção no momento do pedido
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  option      Option    @relation(fields: [optionId], references: [id])
+}
+
+// Registro de pagamentos vinculados a um pedido
+model Payment {
+  id            String    @id @default(uuid())
+  amount        Int // Valor em centavos
+  status        String // Ex: 'aprovado', 'pendente', 'cancelado'
+  transactionId String? // ID da transação no gateway
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relacionamentos
+  orderId         String        @unique // UNIQUE para garantir 1:1
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  name       String?
+  zip        String?
+  address    String
+  number     String
+  complement String?
+  district   String?
+  city       String
+  state      String
+  isActive   Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
 }

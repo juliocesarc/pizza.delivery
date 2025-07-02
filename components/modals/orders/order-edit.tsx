@@ -1,16 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { useOrderStore } from "@/hooks/use-order";
 import { ProductsWithFlavors } from "@/types";
-import { Flavor } from "@prisma/client";
 import { add } from "lodash";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
+
+type Flavor = {
+    id: string;
+    name: string;
+  };
 
 type ordersEditProps = {
     products: {
         id: string;
         name: string;
-        maxFlavors: number;
+        maxOptions: number;
     }[] | undefined;
     flavors: Flavor[];
 } 
@@ -18,7 +22,7 @@ type ordersEditProps = {
 type selectedProduct = {
     id: string;
     name: string;
-    maxFlavors: number;
+    maxOptions: number;
     flavors: Flavor[] | [];
 }
 
@@ -30,11 +34,11 @@ export const OrdersEdit = ({ products, flavors }: ordersEditProps) => {
     const handleAddProduct = (product: {
         id: string;
         name: string;
-        maxFlavors: number;
+        maxOptions: number;
     }) => {
         setProduct({ ...product, flavors: [] });
         
-        if (product.maxFlavors === 1) {
+        if (product.maxOptions === 1) {
             addProduct({ ...product, flavors: [] });
             setProduct(null);
             return;
@@ -65,8 +69,6 @@ export const OrdersEdit = ({ products, flavors }: ordersEditProps) => {
         });
     };
 
-    console.log(order);
-
     return (
         <>
             <div className="grid grid-cols-7 gap-4">
@@ -86,7 +88,7 @@ export const OrdersEdit = ({ products, flavors }: ordersEditProps) => {
             )}
 
             {/* Exibe os sabores disponíveis */}
-            {product && product.maxFlavors > 1 && showFlavors && (
+            {product && product.maxOptions > 1 && showFlavors && (
                 <>
                     {flavors
                         .map((flavor) => (
@@ -120,7 +122,7 @@ export const OrdersEdit = ({ products, flavors }: ordersEditProps) => {
                 ))}
 
                 {/* Exibe o botão "Adicionar" somente se não estiver no modo de adição */}
-                {product.flavors.length < product?.maxFlavors && (
+                {product.flavors.length < product?.maxOptions && (
                     <button
                     onClick={() => setShowFlavors(true)}
                     className="flex justify-center items-center text-white bg-blue-500 h-20 rounded-lg"

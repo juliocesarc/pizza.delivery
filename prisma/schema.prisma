@@ -14,6 +14,20 @@ enum Role {
   DELIVERY
 }
 
+enum CashierStatus {
+  OPEN
+  CLOSED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id            String   @id @default(uuid())
   name          String
@@ -27,6 +41,8 @@ model User {
   updatedAt     DateTime @updatedAt
 
   establishments UserOnEstablishments[]
+  openedCashiers Cashier[]              @relation("CashierOpenedBy")
+  closedCashiers Cashier[]              @relation("CashierClosedBy")
 }
 
 model Customer {
@@ -68,9 +84,33 @@ model PaymentMethod {
   payments       Payment[]
 }
 
+model Cashier {
+  id              String        @id @default(uuid())
+  establishmentId String
+  openedAt        DateTime      @default(now())
+  closedAt        DateTime?
+  status          CashierStatus @default(OPEN)
+  initialAmount   Int           @default(0) // Valor inicial em centavos
+  finalAmount     Int? // Valor final em centavos (preenchido no fechamento)
+  notes           String? // Observações gerais do caixa
+  lastOrderNumber Int           @default(0) // Último número de pedido usado
+
+  openedById String
+  openedBy   User   @relation("CashierOpenedBy", fields: [openedById], references: [id])
+
+  closedById String?
+  closedBy   User?   @relation("CashierClosedBy", fields: [closedById], references: [id])
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+  orders        Order[] // Pedidos relacionados a este caixa
+
+  @@index([establishmentId, status])
+  @@index([openedAt])
+}
+
 // Representa estabelecimentos diferentes que usam o sistema (ex: várias pizzarias ou lanchonetes)
 model Establishment {
-  id             String                 @id @default(uuid()) 
+  id             String                 @id @default(uuid())
   name           String
   phone          String?
   address        String?
@@ -82,6 +122,8 @@ model Establishment {
   orders         Order[]
   users          UserOnEstablishments[]
   paymentMethods PaymentMethod[]
+
+  Cashier Cashier[]
 }
 
 // Representa banners promocionais (ex: "Promoção de Pizza", "Bebida Grátis na Terça")
@@ -199,6 +241,7 @@ model ProductOption {
 // Pedido principal
 model Order {
   id           String      @id @default(uuid())
+  orderNumber  Int
   isPaid       Boolean     @default(false)
   items        OrderItem[]
   payment      Payment? // Relacionamento 1:1 opcional
@@ -213,6 +256,8 @@ model Order {
   deliveryAddress   Address?      @relation(fields: [deliveryAddressId], references: [id])
   establishmentId   String
   establishment     Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  cashierId         String
+  Cashier           Cashier       @relation(fields: [cashierId], references: [id])
 }
 
 // Itens do pedido, ex: "1x Pizza Média" com sabores específicos
@@ -222,11 +267,11 @@ model OrderItem {
   quantity     Int
   observations String?
 
-  options OrderItemOption[]
-  orderId      String
-  productId    String
-  order   Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product           @relation(fields: [productId], references: [id])
+  options   OrderItemOption[]
+  orderId   String
+  productId String
+  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product           @relation(fields: [productId], references: [id])
 }
 
 // Ligações entre OrderItem e suas opções (sabores, complementos, etc)

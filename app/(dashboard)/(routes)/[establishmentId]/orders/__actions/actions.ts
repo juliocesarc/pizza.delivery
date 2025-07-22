@@ -1,6 +1,31 @@
 "use server"
 
 import prismadb from "@/lib/prismadb";
+import axios from "axios";
+import { redirect } from "next/navigation";
+
+interface OrderItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  options?: {
+    name: string;
+    price: number;
+  }[];
+}
+
+interface Order {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  status: string;
+  createdAt: Date;
+  totalAmount: number;
+  items: OrderItem[];
+}
+
+
 
 export async function getCategories(establishmentId: string) {
   const categories = await prismadb.category.findMany({
@@ -13,9 +38,7 @@ export async function getCategories(establishmentId: string) {
       products: {
         select: {
           id: true,
-          name: true,
-          minOptions: true,
-          maxOptions: true,
+          name: true
         }
       }
     },
@@ -51,8 +74,7 @@ export async function searchCustomerByPhone(phone: string | number, establishmen
       where: {
         celphone: {
           contains: phone.toString(),
-        },
-        establishmentId,
+        }
       },
       select: {
         celphone: true,
@@ -68,54 +90,23 @@ export async function searchCustomerByPhone(phone: string | number, establishmen
   }
 };
 
-interface OrderItem {
-  id: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  options?: {
-    name: string;
-    price: number;
-  }[];
-}
-
-interface Order {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  status: string;
-  createdAt: Date;
-  totalAmount: number;
-  items: OrderItem[];
-}
-
-interface ApiResponse {
-  orders: Order[];
-  count?: number;
-  establishmentId?: string;
-}
-
-export async function getOrdersByEstablishment(establishmentId: string): Promise<Order[]> {
+export async function getOrdersByEstablishment(establishmentId: string, token: string): Promise<Order[]> {
   try {
     if (!establishmentId?.trim()) {
       throw new Error('ID do estabelecimento é obrigatório');
     }
 
-    const response = await fetch(`https://api.pizzarianapole.com.br/cashiers/${establishmentId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      next: { revalidate: 0 } 
+    const response = await axios.get(`https://api.pizzarianapole.com.br/cashiers/${establishmentId}`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    if (!response.ok) {
+    if (response.status != 200) {
       throw new Error(`Erro ao buscar pedidos: ${response.status}`);
     }
 
-    const data: ApiResponse = await response.json();
+    let { orders } = response.data
 
-    const orders = (data.orders || []).map(order => ({
+    orders = (orders || []).map((order: any) => ({
       ...order,
       createdAt: new Date(order.createdAt),
       totalAmount: Number(order.totalAmount) || 0
@@ -124,7 +115,10 @@ export async function getOrdersByEstablishment(establishmentId: string): Promise
     return orders;
 
   } catch (error) {
-    console.error('❌ Erro na Server Action getOrdersByEstablishment:', error);
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      redirect('/sign-in');
+    }
+    
     return [];
   }
 }

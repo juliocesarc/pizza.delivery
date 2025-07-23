@@ -1,7 +1,7 @@
 "use client";
 
 import { Heading } from "@/components/ui/heading";
-import { useModalStore } from "@/hooks/use-order-modal";
+import { useOrderModalStore } from "@/hooks/use-order-modal";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,7 +12,7 @@ interface OrderClientProps {
 export const OrderClient: React.FC<OrderClientProps> = ({
   items
 }) => {
-  const { openModal } = useModalStore()
+  const { openCreateModal } = useOrderModalStore()
 
   return (
     <div className="flex items-center justify-between">
@@ -20,7 +20,7 @@ export const OrderClient: React.FC<OrderClientProps> = ({
         title={`Pedidos (${items.length})`}
         description="Gerencie os pedidos de sua loja"
       />
-      <Button onClick={openModal}>
+      <Button onClick={openCreateModal}>
         <Plus className="mr-2 h-4 w-4" /> Novo Pedido
       </Button>
     </div>

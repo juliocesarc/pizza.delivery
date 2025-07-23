@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        //destination: 'https://api.pizzarianapole.com.br/:path*'
-        destination: 'http://localhost:3333/:path*'
+        destination: 'https://api.pizzarianapole.com.br/:path*'
+        //destination: 'http://localhost:3333/:path*'
       },
     ]
   }

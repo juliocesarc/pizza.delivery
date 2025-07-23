@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Package, CheckCircle, MapPin, Store, SquarePen, Check } from 'lucide-react';
+import { useOrderModalStore } from '@/hooks/use-order-modal';
 
 interface OrderOptions {
   name: string;
@@ -18,7 +19,7 @@ interface OrderItem {
   options?: OrderOptions[];
 }
 
-interface Order {
+export interface Order {
   id: string;
   customerName: string;
   customerPhone: string;
@@ -43,6 +44,8 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
     return organizedOrders;
   });
   const [websocket, setWebsocket] = useState<WebSocket | null>(null)
+
+  const { openApproveModal } = useOrderModalStore()
 
   useEffect(() => {
     const connectWebSocket = () => {
@@ -144,14 +147,17 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
   };
 
   const OrderCard: React.FC<{ order: Order; status: string }> = ({ order, status }) => (
-    <Card className="flex justify-between items-center cursor-pointer mb-4 bg-slate-800 border-l-4 border-l-blue-500 p-4">
+    <Card 
+      className="flex justify-between items-center cursor-pointer mb-4 bg-slate-800 border-l-4 border-l-blue-500 p-4"
+      onClick={() => openApproveModal(order)}
+    >
       <div className='flex gap-3 items-center'>
         <span className='flex items-center justify-center p-2 bg-slate-700 rounded-md'>
           <Store className="h-6 w-6" />
         </span>
         <div className='flex flex-col'>
           <h3 className='text-lg font-semibold'>{order.customerName}</h3>
-          <p className='text-sm text-gray-500'>{formatTime(new Date(order.createdAt))}</p>
+          <p className='text-sm text-gray-400'>{formatTime(new Date(order.createdAt))}</p>
         </div>
       </div>
       <div className='flex gap-2 items-center'>

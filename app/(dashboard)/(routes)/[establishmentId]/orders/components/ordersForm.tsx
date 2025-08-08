@@ -38,7 +38,7 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
   const [orders, setOrders] = useState(() => {
     const organizedOrders = {
       pending: initialOrders.filter(order => order.status === 'PENDENTE'),
-      preparing: initialOrders.filter(order => order.status === 'PREPARANDO'),
+      preparing: initialOrders.filter(order => order.status === 'APPROVED'),
       ready: initialOrders.filter(order => order.status === 'PRONTO')
     };
     return organizedOrders;
@@ -50,6 +50,7 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
   useEffect(() => {
     const connectWebSocket = () => {
       const ws = new WebSocket('https://api.pizzarianapole.com.br/ws')
+      //const ws = new WebSocket('http://localhost:3333/ws')
 
       ws.onopen = () => {
         ws.send(JSON.stringify({
@@ -72,7 +73,7 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
               totalAmount: data.data.totalAmount,
               createdAt: new Date(data.data.createdAt)
             }
-          
+
             // Adiciona o novo pedido à lista de pedidos pendentes
             setOrders(prev => ({
               ...prev,
@@ -113,6 +114,13 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
     }
   };
 
+  const handleRejectOrder = (orderId: string) => {
+    setOrders(prev => ({
+      ...prev,
+      pending: prev.pending.filter(o => o.id !== orderId)
+    }));
+  };
+
   const handleMarkAsReady = (orderId: string) => {
     const order = orders.preparing.find(o => o.id === orderId);
     if (order) {
@@ -147,9 +155,13 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
   };
 
   const OrderCard: React.FC<{ order: Order; status: string }> = ({ order, status }) => (
-    <Card 
+    <Card
       className="flex justify-between items-center cursor-pointer mb-4 bg-slate-800 border-l-4 border-l-blue-500 p-4"
-      onClick={() => openApproveModal(order)}
+      onClick={() => openApproveModal(
+        order,
+        handleApproveOrder,
+        handleRejectOrder
+      )}
     >
       <div className='flex gap-3 items-center'>
         <span className='flex items-center justify-center p-2 bg-slate-700 rounded-md'>
@@ -162,7 +174,7 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
       </div>
       <div className='flex gap-2 items-center'>
         {status !== 'pending' && (
-          <Check className="h-6 w-6 p-1 cursor-pointer bg-green-500 text-white rounded-md" 
+          <Check className="h-6 w-6 p-1 cursor-pointer bg-green-500 text-white rounded-md"
             onClick={() => handleCompleteOrder(order.id)}
           />
         )}
@@ -209,7 +221,7 @@ export const OrdersForm = ({ initialOrders, establishmentId }: OrdersFormProps) 
             </p>
           ) : (
             orders.preparing.map((order) => (
-              <OrderCard key={order.id} order={order} status="preparing" />
+              <OrderCard key={order.id} order={order} status="APPROVED" />
             ))
           )}
         </div>

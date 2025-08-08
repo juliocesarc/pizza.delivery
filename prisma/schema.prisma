@@ -7,81 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  PLATFORM_ADMIN
-  STORE_OWNER
-  STAFF
-  DELIVERY
-}
-
-enum CashierStatus {
-  OPEN
-  CLOSED
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  READY
-  DELIVERED
-  CANCELLED
-}
-
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  cpf           String   @unique
-  celphone      String   @unique
-  dateOfBirth   DateTime
-  password_hash String
-  role          Role
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  establishments UserOnEstablishments[]
-  openedCashiers Cashier[]              @relation("CashierOpenedBy")
+  id             String                 @id @default(uuid())
+  email          String                 @unique
+  name           String
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  celphone       String                 @unique
+  cpf            String                 @unique
+  dateOfBirth    DateTime
+  password_hash  String
+  role           Role
   closedCashiers Cashier[]              @relation("CashierClosedBy")
+  openedCashiers Cashier[]              @relation("CashierOpenedBy")
+  establishments UserOnEstablishments[]
 }
 
 model Customer {
   id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  cpf           String    @unique
   celphone      String    @unique
-  dateOfBirth   DateTime?
-  password_hash String
+  email         String    @unique
+  name          String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  orders    Order[]
-  addresses Address[]
+  cpf           String    @unique
+  dateOfBirth   DateTime?
+  password_hash String
+  addresses     Address[]
+  orders        Order[]
 }
 
 model UserOnEstablishments {
   userId          String
   establishmentId String
-  role            Role // Papel dentro do restaurante (STORE_OWNER, STAFF, DELIVERY)
+  role            Role
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  user            User          @relation(fields: [userId], references: [id])
 
-  user          User          @relation(fields: [userId], references: [id])
-  establishment Establishment @relation(fields: [establishmentId], references: [id])
-
-  @@id([userId, establishmentId]) // Chave composta
+  @@id([userId, establishmentId])
 }
 
 model PaymentMethod {
-  id        String   @id @default(uuid())
-  name      String   @unique // Ex: "PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro"
-  code      String   @unique // Ex: "pix", "credit_card", "debit_card", "cash"
-  icon      String? // URL do ícone do meio de pagamento
-  isActive  Boolean  @default(true) // Se o meio está ativo na plataforma
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  establishments Establishment[]
+  id             String          @id @default(uuid())
+  name           String          @unique
+  code           String          @unique
+  icon           String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   payments       Payment[]
+  establishments Establishment[] @relation("EstablishmentToPaymentMethod")
 }
 
 model Cashier {
@@ -90,25 +65,21 @@ model Cashier {
   openedAt        DateTime      @default(now())
   closedAt        DateTime?
   status          CashierStatus @default(OPEN)
-  initialAmount   Int           @default(0) // Valor inicial em centavos
-  finalAmount     Int? // Valor final em centavos (preenchido no fechamento)
-  notes           String? // Observações gerais do caixa
-  lastOrderNumber Int           @default(0) // Último número de pedido usado
-
-  openedById String
-  openedBy   User   @relation("CashierOpenedBy", fields: [openedById], references: [id])
-
-  closedById String?
-  closedBy   User?   @relation("CashierClosedBy", fields: [closedById], references: [id])
-
-  establishment Establishment @relation(fields: [establishmentId], references: [id])
-  orders        Order[] // Pedidos relacionados a este caixa
+  initialAmount   Int           @default(0)
+  finalAmount     Int?
+  notes           String?
+  lastOrderNumber Int           @default(0)
+  openedById      String
+  closedById      String?
+  closedBy        User?         @relation("CashierClosedBy", fields: [closedById], references: [id])
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  openedBy        User          @relation("CashierOpenedBy", fields: [openedById], references: [id])
+  orders          Order[]
 
   @@index([establishmentId, status])
   @@index([openedAt])
 }
 
-// Representa estabelecimentos diferentes que usam o sistema (ex: várias pizzarias ou lanchonetes)
 model Establishment {
   id             String                 @id @default(uuid())
   name           String
@@ -117,16 +88,14 @@ model Establishment {
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   banners        Banner[]
+  Cashier        Cashier[]
   categories     Category[]
-  products       Product[]
   orders         Order[]
+  products       Product[]
   users          UserOnEstablishments[]
-  paymentMethods PaymentMethod[]
-
-  Cashier Cashier[]
+  paymentMethods PaymentMethod[]        @relation("EstablishmentToPaymentMethod")
 }
 
-// Representa banners promocionais (ex: "Promoção de Pizza", "Bebida Grátis na Terça")
 model Banner {
   id              String        @id @default(uuid())
   label           String
@@ -138,166 +107,142 @@ model Banner {
   categories      Category[]
 }
 
-// Categoria de produtos, ex: "Pizzas", "Bebidas"
 model Category {
   id              String        @id @default(uuid())
   name            String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   bannerId        String?
-  banner          Banner?       @relation(fields: [bannerId], references: [id])
-  optionGroups    OptionGroup[] // Grupos de opções disponíveis para esta categoria
-  products        Product[]
   establishmentId String
+  banner          Banner?       @relation(fields: [bannerId], references: [id])
   establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  products        Product[]
+  optionGroups    OptionGroup[]
 
   @@index([bannerId])
 }
 
-enum PricingModel {
-  ADDITIVE // Soma todos os preços (padrão)
-  HIGHEST_PRICE // Cobra apenas o mais caro (pizzarias)
-  FIXED_UPGRADE // Taxa fixa independente da quantidade
-}
-
-// Grupo de opções, ex: "Sabores da Pizza", "Espessura da Massa", "Borda Recheada"
 model OptionGroup {
   id                  String               @id @default(uuid())
   name                String
   categoryId          String
   pricingModel        PricingModel?        @default(ADDITIVE)
-  category            Category             @relation(fields: [categoryId], references: [id])
   options             Option[]
-  productOptionGroups ProductOptionGroup[] // Relação N:N com produtos e suas configurações
+  productOptionGroups ProductOptionGroup[]
+  category            Category             @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@map("option_groups")
 }
 
-// Opções individuais, ex: "Calabresa", "Margherita", "Massa Fina", "Borda Catupiry"
 model Option {
   id               String            @id @default(uuid())
   name             String
-  basePrice        Int               @default(0) // Preço base da opção
   optionGroupId    String
+  basePrice        Int               @default(0)
   optionGroup      OptionGroup       @relation(fields: [optionGroupId], references: [id])
-  productOptions   ProductOption[] // Preços específicos por produto
   orderItemOptions OrderItemOption[]
+  productOptions   ProductOption[]
 }
 
-// Produtos vendidos, ex: "Pizza Broto", "Pizza Média", "Pizza Grande"
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  image       String?
-  price       Int      @default(0)
-  stock       Int?
-  isFeatured  Boolean  @default(false)
-  isArchived  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id                  String               @id @default(uuid())
+  name                String
+  description         String
+  price               Int                  @default(0)
+  stock               Int?
+  isFeatured          Boolean              @default(false)
+  isArchived          Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   categoryId          String
-  category            Category             @relation(fields: [categoryId], references: [id])
   establishmentId     String
-  establishment       Establishment        @relation(fields: [establishmentId], references: [id])
+  image               String?
   orderItems          OrderItem[]
-  productOptionGroups ProductOptionGroup[] // Configurações específicas dos grupos de opções
-  productOptions      ProductOption[] // Preços específicos das opções para este produto
+  category            Category             @relation(fields: [categoryId], references: [id])
+  establishment       Establishment        @relation(fields: [establishmentId], references: [id])
+  productOptions      ProductOption[]
+  productOptionGroups ProductOptionGroup[]
 }
 
-// Configurações específicas de cada grupo de opções para cada produto
 model ProductOptionGroup {
-  id            String @id @default(uuid())
+  id            String        @id @default(uuid())
   productId     String
   optionGroupId String
-  minSelect     Int    @default(0)
-  maxSelect     Int    @default(1)
-
-  // Novos campos para controle de precificação específico por produto
-  pricingModel PricingModel? // Sobrescreve o padrão do OptionGroup se definido
-  upgradePrice Int? // Para modelo FIXED_UPGRADE
-
-  isRequired  Boolean     @default(true)
-  product     Product     @relation(fields: [productId], references: [id])
-  optionGroup OptionGroup @relation(fields: [optionGroupId], references: [id])
+  minSelect     Int           @default(0)
+  maxSelect     Int           @default(1)
+  isRequired    Boolean       @default(true)
+  pricingModel  PricingModel?
+  upgradePrice  Int?
+  optionGroup   OptionGroup   @relation(fields: [optionGroupId], references: [id])
+  product       Product       @relation(fields: [productId], references: [id])
 
   @@unique([productId, optionGroupId])
 }
 
-// Preços específicos das opções para cada produto
 model ProductOption {
   id        String  @id @default(uuid())
   productId String
   optionId  String
-  price     Int // Preço da opção para este produto específico
-  product   Product @relation(fields: [productId], references: [id])
+  price     Int
   option    Option  @relation(fields: [optionId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 
   @@unique([productId, optionId])
 }
 
-// Pedido principal
 model Order {
-  id           String      @id @default(uuid())
-  orderNumber  Int
-  isPaid       Boolean     @default(false)
-  items        OrderItem[]
-  payment      Payment? // Relacionamento 1:1 opcional
-  status       String // Ex: 'pendente', 'preparando', 'entregue'
-  observations String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
+  id                String        @id @default(uuid())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  isPaid            Boolean       @default(false)
   customerId        String
-  customer          Customer      @relation(fields: [customerId], references: [id])
-  deliveryAddressId String? // Endereço de entrega, se aplicável
-  deliveryAddress   Address?      @relation(fields: [deliveryAddressId], references: [id])
   establishmentId   String
-  establishment     Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  deliveryAddressId String?
+  status            String
+  observations      String?
   cashierId         String
+  orderNumber       Int
   Cashier           Cashier       @relation(fields: [cashierId], references: [id])
+  customer          Customer      @relation(fields: [customerId], references: [id])
+  deliveryAddress   Address?      @relation(fields: [deliveryAddressId], references: [id])
+  establishment     Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  items             OrderItem[]
+  payment           Payment?
 }
 
-// Itens do pedido, ex: "1x Pizza Média" com sabores específicos
 model OrderItem {
-  id           String  @id @default(uuid())
+  id           String            @id @default(uuid())
+  orderId      String
+  productId    String
   price        Int
   quantity     Int
   observations String?
-
-  options   OrderItemOption[]
-  orderId   String
-  productId String
-  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product           @relation(fields: [productId], references: [id])
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product           @relation(fields: [productId], references: [id])
+  options      OrderItemOption[]
 }
 
-// Ligações entre OrderItem e suas opções (sabores, complementos, etc)
 model OrderItemOption {
   id          String    @id @default(uuid())
   orderItemId String
   optionId    String
-  price       Decimal // Preço da opção no momento do pedido
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  price       Decimal
   option      Option    @relation(fields: [optionId], references: [id])
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 }
 
-// Registro de pagamentos vinculados a um pedido
 model Payment {
-  id            String    @id @default(uuid())
-  amount        Int // Valor em centavos
-  status        String // Ex: 'aprovado', 'pendente', 'cancelado'
-  transactionId String? // ID da transação no gateway
-  paidAt        DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relacionamentos
-  orderId         String        @unique // UNIQUE para garantir 1:1
-  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id              String        @id @default(uuid())
+  status          String
+  paidAt          DateTime?
+  orderId         String        @unique
+  amount          Int
+  createdAt       DateTime      @default(now())
   paymentMethodId String
+  transactionId   String?
+  updatedAt       DateTime      @updatedAt
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
 }
 
@@ -314,7 +259,36 @@ model Address {
   isActive   Boolean
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  orders     Order[]
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
+  orders     Order[]
+}
+
+enum Role {
+  PLATFORM_ADMIN
+  STORE_OWNER
+  STAFF
+  DELIVERY
+}
+
+enum CashierStatus {
+  OPEN
+  CLOSED
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum PricingModel {
+  ADDITIVE
+  HIGHEST_PRICE
+  FIXED_UPGRADE
 }

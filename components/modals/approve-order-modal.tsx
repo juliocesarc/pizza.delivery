@@ -56,7 +56,15 @@ const getStatusInfo = (status: string) => {
 };
 
 export const ApproveOrderModal = () => {
-    const { modalType, isOpen, selectedOrder, closeModal } = useOrderModalStore();
+    const {
+        modalType,
+        isOpen,
+        selectedOrder,
+        closeModal,
+        onApproveCallback,
+        onRejectCallback
+    } = useOrderModalStore();
+
     const [loading, setLoading] = useState(false);
     const [notes, setNotes] = useState("");
 
@@ -71,18 +79,20 @@ export const ApproveOrderModal = () => {
         try {
             setLoading(true);
 
-            const response = await axios.patch(`/api/orders/${selectedOrder.id}/approve`, {
-                notes: notes.trim() || null,
-                approvedAt: new Date().toISOString(),
-                status: 'preparing' // ou o status que representa "aprovado"
-            });
+            const response = await axios.patch(`/api/orders/${selectedOrder.id}/status`, {
+                status: 'APPROVED', 
+                reason: undefined,
+                notes: undefined,
+            }); 
+                
 
             toast.success('Pedido aprovado com sucesso!');
+
+            if (onApproveCallback) {
+                onApproveCallback(selectedOrder.id);
+            }
+
             closeModal();
-
-            // Recarregar a página ou atualizar os dados
-            window.location.reload();
-
         } catch (error: any) {
             console.error('Erro ao aprovar pedido:', error);
 
@@ -106,18 +116,19 @@ export const ApproveOrderModal = () => {
                 return;
             }
 
-            const response = await axios.patch(`/api/orders/${selectedOrder.id}/reject`, {
+            const response = await axios.patch(`/api/orders/${selectedOrder.id}/status`, {
                 rejectionReason: notes.trim(),
                 rejectedAt: new Date().toISOString(),
                 status: 'cancelled'
             });
 
             toast.success('Pedido rejeitado');
+
+            if (onRejectCallback) {
+                onRejectCallback(selectedOrder.id);
+            }
+
             closeModal();
-
-            // Recarregar a página ou atualizar os dados
-            window.location.reload();
-
         } catch (error: any) {
             console.error('Erro ao rejeitar pedido:', error);
 
@@ -131,7 +142,6 @@ export const ApproveOrderModal = () => {
         }
     };
 
-    console.log('Selected Order:', selectedOrder);
 
     return (
         <Modal
